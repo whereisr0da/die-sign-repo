@@ -1,0 +1,55 @@
+// DIE's signature file
+// Universal Windows Platform detection
+// Author: r0da
+
+init("platform","Universal Windows Platform(UWP)");
+
+function detect(bShowType,bShowVersion,bShowOptions)
+{
+    // IF .NET UWP
+    if(PE.isNET())
+    {
+        // HELLO compareEP_NET ????
+        if(PE.isSignatureInSectionPresent(".text","007E0A000004252D17267E09000004FE061E000006733A00000A25800A000004283B00000A00")){
+            bDetected=1;
+            sOptions=".NET";
+        }
+    }
+    // NATIVE
+    else{
+
+        // UWP NATIVE DLL APP
+        if(PE.isExportFunctionPresent("RHBinder__ShimExeMain") ||
+           PE.isExportFunctionPresent("DllGetClassObject")){
+
+            bDetected=1;
+            sOptions="DLL APP";
+        }
+        // SOME PROTECTED UWP GAMES
+        else if (PE.compareEP("4883ec28E8????") && PE.isSectionNamePresent("_RDATA")){
+
+            bDetected=1;
+            sOptions="GAME APP";
+        }
+        // UWP NATIVE WRAPPED APP
+        else if (!PE.isDll() && PE.isExportFunctionPresent("DllGetActivationFactory")){
+
+            bDetected=1;
+            sOptions="WRAPPED";
+        }
+        // UWP NATIVE APP LOADER
+        else{
+
+            // isLibraryFunctionPresent dont seem to work
+
+            if((libName = PE.getImportLibraryName(0)) != -1){
+                if(PE.getImportFunctionName(libName, 0) == "RHBinder__ShimExeMain"){
+                    bDetected=1;
+                    sOptions="DLL LOADER";
+                }
+            }
+        }
+    }
+
+    return result(bShowType,bShowVersion,bShowOptions);
+}
